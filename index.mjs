@@ -13,6 +13,7 @@ import { Server } from "socket.io";
 import ipfilter from 'express-ipfilter';
 import { blocked_ip } from './modules/blacklist/blacklist.mjs';
 import { addBlackList, getBlackList } from './modules/constant/admin_query.mjs';
+import { verifyToken } from './modules/auth/token.mjs';
 
 const app = express();
 const rateHandler = () => {
@@ -122,6 +123,11 @@ io.on("connection", (client) => {
         io.emit('onMessage', data);
     });
 });
+
+app.get('/get-logs',verifyToken,(req, res)=>{
+    const logs=fs.readFileSync('modules/logger/logs.txt', 'utf8');
+    res.json(JSON.stringify(logs));
+})
 
 export const socket_io = io;
 

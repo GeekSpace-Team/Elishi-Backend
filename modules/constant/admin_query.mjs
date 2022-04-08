@@ -5,14 +5,17 @@
 
 // category queries
     export const addCategory = `INSERT INTO category(
-	category_name_tm, category_name_ru, category_name_en, status, is_main, created_at,updated_at)
-	VALUES ($1, $2, $3, $4, $5, NOW(), NOW())  RETURNING *`;
+	category_name_tm, category_name_ru, category_name_en, status, is_main, image, created_at,updated_at)
+	VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())  RETURNING *`;
     export const getCategory = `SELECT * FROM category ORDER BY updated_at DESC`;
     export const deleteCategory = `DELETE FROM category WHERE id = $1`;
     export const updateCategory = `UPDATE category
 	SET category_name_tm=$1, category_name_ru=$2, category_name_en=$3, status=$4, updated_at=now(), is_main=$5
 	WHERE id=$6  RETURNING *`;
-
+    export const updateCategoryWithImage = `UPDATE category
+	SET category_name_tm=$1, category_name_ru=$2, category_name_en=$3, status=$4, updated_at=now(), is_main=$5,image=$6
+	WHERE id=$7  RETURNING *`;
+    export const deleteCategoryImage = "SELECT image FROM category WHERE id=$1";
 // sub category queries
     export const add_sub_category_query = `INSERT INTO sub_category(
         sub_category_name_tm, sub_category_name_ru, sub_category_name_en, category_id, status, image, created_at, updated_at)
@@ -43,6 +46,9 @@
     export const update_product_query = `UPDATE product
 	SET product_name=$1, price=$2, status=$3, description=$4, sub_category_id=$5, user_id=$6, is_popular=$7, size=$8, phone_number=$9, updated_at=now(),cancel_reason=$11
 	WHERE id=$10 RETURNING *;`;
+    export const update_product_query_user = `UPDATE product
+	SET product_name=$1, price=$2, description=$3, sub_category_id=$4, size=$5, phone_number=$6, updated_at=now()
+	WHERE id=$7 RETURNING *;`;
     export const changeUserProductStatuses = `UPDATE product SET status=$1,updated_at=now() WHERE user_id=$2 RETURNING *`;
     export const changeProductStatusById = `UPDATE product SET status=$1,cancel_reason=$2,updated_at=now() WHERE id=$3 RETURNING *`;
 
@@ -60,6 +66,7 @@
     export const addUserQuery = `INSERT INTO mobile_users(
         fullname, address, phone_number, profile_image, user_type_id, region_id, email, notification_token, gender, status, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now(), now())  RETURNING *;`;
+    
     export const getUserQueryWithCondition = `SELECT m.*,t.user_type,t.product_limit,d.district_name_tm,d.region_id FROM mobile_users m
 	LEFT JOIN user_type t ON m.user_type_id = t.id
 	LEFT JOIN district d ON m.region_id = d.id
@@ -211,15 +218,15 @@
 
 //  Event queries
     export const addEvent = `INSERT INTO event(
-        title_tm, title_ru, title_en, event_image, url, "isMain", status, created_at, updated_at,event_type,go_id)
+        title_tm, title_ru, title_en, event_image, url, "is_main", status, created_at, updated_at,event_type,go_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now(),$8,$9) RETURNING *;`;
     export const getEvents = `SELECT * FROM event ORDER BY updated_at DESC`;
     export const deleteEvent = `DELETE FROM event WHERE id=$1`;
     export const updateEvent = `UPDATE event
-	SET title_tm=$1, title_ru=$2, title_en=$3, event_image=$4, url=$5, "isMain"=$6, status=$7, updated_at=now(),event_type=$8,go_id=$9
+	SET title_tm=$1, title_ru=$2, title_en=$3, event_image=$4, url=$5, "is_main"=$6, status=$7, updated_at=now(),event_type=$8,go_id=$9
 	WHERE id=$10 RETURNING *;`;
     export const updateEventWithoutImage = `UPDATE event
-	SET title_tm=$1, title_ru=$2, title_en=$3, url=$4, "isMain"=$5, status=$6, updated_at=now(),event_type=$7,go_id=$8
+	SET title_tm=$1, title_ru=$2, title_en=$3, url=$4, "is_main"=$5, status=$6, updated_at=now(),event_type=$7,go_id=$8
 	WHERE id=$9 RETURNING *;`;
     export const deleteEventImage = "SELECT event_image FROM event WHERE id=$1";
     

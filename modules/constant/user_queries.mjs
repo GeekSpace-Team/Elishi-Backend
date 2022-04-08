@@ -6,7 +6,6 @@ LEFT JOIN district d ON m.region_id = d.id
 LEFT JOIN region r ON d.region_id = r.id
 WHERE m.phone_number=$1;`;
 export const getUserById = `SELECT m.*,t.user_type,t.product_limit,d.district_name_tm,d.district_name_ru,d.district_name_en,d.region_id,r.region_name_tm,r.region_name_ru,r.region_name_en,
-(SELECT array_to_json(array_agg(p.*)) FROM product p WHERE p.user_id=$1) as user_products,
 (SELECT array_to_json(array_agg(c.*))
 	FROM congratulations c) as congratulations
 FROM mobile_users m
@@ -30,6 +29,17 @@ export const checkVerification2 = `SELECT p.*,Extract(MINUTE FROM (now() - p.cre
 export const addUser = `INSERT INTO mobile_users(
 	fullname, phone_number, user_type_id, region_id,notification_token, gender, status, created_at, updated_at, token)
 	VALUES ($1,$2,$3,2,$4,1,1,now(),now(),$5);`;
+export const getUserProducts=`SELECT
+p.*,u.fullname,r.region_name_tm,r.region_name_ru,r.region_name_en,d.district_name_tm,d.district_name_ru,d.district_name_en,u.fullname,u.address,u.profile_image,u.email,u.gender,u.phone_number as user_phone_number,sub.sub_category_name_en,t.user_type,t.product_limit,
+(SELECT count(f.id) FROM favorite f WHERE f.product_id=p.id AND f.user_id=p.user_id) AS isFav,
+(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = p.id) AS images
+FROM product p LEFT JOIN mobile_users u ON u.id = p.user_id
+LEFT JOIN sub_category sub ON sub.id = p.sub_category_id 
+LEFT JOIN user_type t ON t.id=u.user_type_id
+LEFT JOIN district d ON d.id=u.region_id
+LEFT JOIN region r ON r.id=d.region_id
+WHERE p.user_id=$1
+ORDER BY p.updated_at DESC;`;
 // Locations
 export const getLocations=`SELECT r.*,(SELECT array_to_json(array_agg(d.*)) FROM district d WHERE d.region_id = r.id) AS sub_locations FROM region r`;
 
@@ -64,11 +74,130 @@ ORDER BY c.updated_at DESC LIMIT $2 OFFSET ($3 - 1) * $2`;
 export const getHoliday = `SELECT h.* FROM holiday h`;
 
 // Home
-export const getHome=`SELECT now(),
-(SELECT array_to_json(array_agg(b.*)) FROM banner b WHERE b.status!=0) AS banner,
-(SELECT array_to_json(array_agg(s.*)) FROM category c INNER JOIN sub_category s ON c.id=s.category_id WHERE c.status!=0 AND c.is_main=true) AS category,
-(SELECT array_to_json(array_agg(a.*)) FROM ads a WHERE a.status='home_large' OR a.status='home_mini') AS ads;`;
-export const getEvents=`SELECT e.*,ev.*,
-(SELECT array_to_json(array_agg(p.*)) FROM product p WHERE p.id = e.product_id ) AS product,
-(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = e.product_id) AS images
-FROM event_products e INNER JOIN event ev ON ev.id=e.event_id ORDER BY e.updated_at DESC;`;
+export const getHome=`	SELECT json_build_object(
+	'home',json_build_object(
+		'banners',(SELECT array_to_json(array_agg(b.*)) FROM banner b WHERE b.status!=0),
+		'category',(SELECT array_to_json(array_agg(c.*)) FROM category c WHERE c.status!=0 AND c.is_main=true),
+		'ads',(SELECT array_to_json(array_agg(a.*)) FROM ads a WHERE a.status='home_large' OR a.status='home_mini'),
+		'vip_users',(SELECT array_to_json(array_agg(m.*)) FROM mobile_users m LEFT JOIN user_type ut ON m.user_type_id=ut.id WHERE ut.user_type='vip'),
+		'events',(SELECT array_to_json(array_agg(e.*)) FROM event e WHERE e.is_main=1 AND e.status!=0 AND e.event_type!='products'),
+		'collections',(SELECT array_to_json(array_agg(e.*)) FROM event e WHERE e.is_main=1 AND e.status!=0 AND e.event_type='products')
+	)
+);`;
+export const getProductById=`SELECT
+p.*,u.fullname,r.region_name_tm,r.region_name_ru,r.region_name_en,d.district_name_tm,d.district_name_ru,d.district_name_en,u.fullname,u.address,u.profile_image,u.email,u.gender,u.phone_number as user_phone_number,sub.sub_category_name_en,t.user_type,t.product_limit,
+(SELECT count(f.id) FROM favorite f WHERE f.product_id=p.id AND f.user_id=$1) AS isFav,
+(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = p.id) AS images
+FROM product p LEFT JOIN mobile_users u ON u.id = p.user_id
+LEFT JOIN sub_category sub ON sub.id = p.sub_category_id 
+LEFT JOIN user_type t ON t.id=u.user_type_id
+LEFT JOIN district d ON d.id=u.region_id
+LEFT JOIN region r ON r.id=d.region_id
+WHERE p.id=$2 ORDER BY p.updated_at;`;
+
+export const getBanners=`SELECT b.* FROM banner b WHERE b.status!=0 ORDER BY b.order DESC;`;
+export const getMainCategory=`SELECT c.* FROM category c WHERE c.status!=0 AND c.is_main=true ORDER BY c.updated_at DESC;`;
+export const getAds=`SELECT a.* FROM ads a WHERE a.status='home_large' OR a.status='home_mini' ORDER BY a.updated_at DESC;`;
+export const vipUser=`SELECT m.*,ut.user_type,ut.product_limit FROM mobile_users m LEFT JOIN user_type ut ON m.user_type_id=ut.id WHERE ut.user_type='vip' ORDER BY m.updated_at DESC;`;
+export const getEvents=`SELECT e.* FROM event e WHERE e.is_main=1 AND e.status!=0 AND e.event_type!='products' ORDER BY e.updated_at DESC;`;
+export const getNewProducts=`SELECT
+p.*,u.fullname,r.region_name_tm,r.region_name_ru,r.region_name_en,d.district_name_tm,d.district_name_ru,d.district_name_en,u.fullname,u.address,u.profile_image,u.email,u.gender,u.phone_number as user_phone_number,sub.sub_category_name_en,t.user_type,t.product_limit,
+(SELECT count(f.id) FROM favorite f WHERE f.product_id=p.id AND f.user_id=%s) AS isFav,
+(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = p.id) AS images
+FROM product p LEFT JOIN mobile_users u ON u.id = p.user_id
+LEFT JOIN sub_category sub ON sub.id = p.sub_category_id 
+LEFT JOIN user_type t ON t.id=u.user_type_id
+LEFT JOIN district d ON d.id=u.region_id
+LEFT JOIN region r ON r.id=d.region_id
+WHERE p.status!=0 ORDER BY p.updated_at LIMIT 30;`;
+export const getTrendProducts=`SELECT
+p.*,u.fullname,r.region_name_tm,r.region_name_ru,r.region_name_en,d.district_name_tm,d.district_name_ru,d.district_name_en,u.fullname,u.address,u.profile_image,u.email,u.gender,u.phone_number as user_phone_number,sub.sub_category_name_en,t.user_type,t.product_limit,
+(SELECT count(f.id) FROM favorite f WHERE f.product_id=p.id AND f.user_id=%s) AS isFav,
+(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = p.id) AS images
+FROM product p LEFT JOIN mobile_users u ON u.id = p.user_id
+LEFT JOIN sub_category sub ON sub.id = p.sub_category_id 
+LEFT JOIN user_type t ON t.id=u.user_type_id
+LEFT JOIN district d ON d.id=u.region_id
+LEFT JOIN region r ON r.id=d.region_id
+WHERE p.status!=0 AND p.is_popular=true ORDER BY p.updated_at LIMIT 30;`;
+export const getCollections=`SELECT e.*,(SELECT array_to_json(array_agg(ep.product_id)) FROM event_products ep WHERE ep.event_id=e.id) AS collections FROM event e WHERE e.is_main=1 AND e.status!=0 AND e.event_type='products' ORDER BY e.updated_at DESC;`;
+export const getEventProducts=`SELECT
+p.*,u.fullname,r.region_name_tm,r.region_name_ru,r.region_name_en,d.district_name_tm,d.district_name_ru,d.district_name_en,u.fullname,u.address,u.profile_image,u.email,u.gender,u.phone_number as user_phone_number,sub.sub_category_name_en,t.user_type,t.product_limit,
+(SELECT count(f.id) FROM favorite f WHERE f.product_id=p.id AND f.user_id=%s) AS isFav,
+(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = p.id) AS images
+FROM product p LEFT JOIN mobile_users u ON u.id = p.user_id
+LEFT JOIN sub_category sub ON sub.id = p.sub_category_id 
+LEFT JOIN user_type t ON t.id=u.user_type_id
+LEFT JOIN district d ON d.id=u.region_id
+LEFT JOIN region r ON r.id=d.region_id
+WHERE p.status!=0 AND p.id IN (%L) ORDER BY p.updated_at LIMIT 30;`;
+export const getDeviceVersion = `SELECT value,type
+FROM vars WHERE type=$1 OR type=$2;`;
+export const getSimilarProducts=`SELECT
+p.*,u.fullname,r.region_name_tm,r.region_name_ru,r.region_name_en,d.district_name_tm,d.district_name_ru,d.district_name_en,u.fullname,u.address,u.profile_image,u.email,u.gender,u.phone_number as user_phone_number,sub.sub_category_name_en,t.user_type,t.product_limit,
+(SELECT count(f.id) FROM favorite f WHERE f.product_id=p.id AND f.user_id=$1) AS isFav,
+(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = p.id) AS images
+FROM product p LEFT JOIN mobile_users u ON u.id = p.user_id
+LEFT JOIN sub_category sub ON sub.id = p.sub_category_id 
+LEFT JOIN user_type t ON t.id=u.user_type_id
+LEFT JOIN district d ON d.id=u.region_id
+LEFT JOIN region r ON r.id=d.region_id
+WHERE p.status!=0 AND p.sub_category_id=$2 ORDER BY p.updated_at LIMIT 20;`;
+
+
+export const getProductsQuery=`SELECT
+p.*,u.fullname,r.region_name_tm,r.region_name_ru,r.region_name_en,d.district_name_tm,d.district_name_ru,d.district_name_en,u.fullname,u.address,u.profile_image,u.email,u.gender,u.phone_number as user_phone_number,sub.sub_category_name_en,t.user_type,t.product_limit,
+(SELECT count(f.id) FROM favorite f WHERE f.product_id=p.id AND f.user_id=$1) AS isFav,
+(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = p.id) AS images
+FROM product p LEFT JOIN mobile_users u ON u.id = p.user_id
+LEFT JOIN sub_category sub ON sub.id = p.sub_category_id 
+LEFT JOIN user_type t ON t.id=u.user_type_id
+LEFT JOIN district d ON d.id=u.region_id
+LEFT JOIN region r ON r.id=d.region_id
+%s
+%s
+LIMIT $2 OFFSET ($3 - 1) * $2;`;
+
+export const searchQuery=`SELECT
+p.*,u.fullname,r.region_name_tm,r.region_name_ru,r.region_name_en,d.district_name_tm,d.district_name_ru,d.district_name_en,u.fullname,u.address,u.profile_image,u.email,u.gender,u.phone_number as user_phone_number,sub.sub_category_name_en,t.user_type,t.product_limit,
+(SELECT count(f.id) FROM favorite f WHERE f.product_id=p.id AND f.user_id=$1) AS isFav,
+(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id = p.id) AS images
+FROM product p LEFT JOIN mobile_users u ON u.id = p.user_id
+LEFT JOIN sub_category sub ON sub.id = p.sub_category_id 
+LEFT JOIN user_type t ON t.id=u.user_type_id
+LEFT JOIN district d ON d.id=u.region_id
+LEFT JOIN region r ON r.id=d.region_id
+LEFT JOIN category c ON c.id=sub.category_id
+WHERE p.product_name ILIKE '%' || $2 || '%'
+ OR p.description ILIKE '%' || $2 || '%' 
+ OR p.size ILIKE '%' || $2 || '%'
+ OR u.fullname ILIKE '%' || $2 || '%'
+ OR r.region_name_tm ILIKE '%' || $2 || '%'
+ OR r.region_name_ru ILIKE '%' || $2 || '%'
+ OR r.region_name_en ILIKE '%' || $2 || '%'
+ OR d.district_name_tm ILIKE '%' || $2 || '%'
+ OR d.district_name_ru ILIKE '%' || $2 || '%'
+ OR d.district_name_en ILIKE '%' || $2 || '%'
+ OR sub.sub_category_name_en ILIKE '%' || $2 || '%'
+ OR sub.sub_category_name_ru ILIKE '%' || $2 || '%'
+ OR sub.sub_category_name_tm ILIKE '%' || $2 || '%'
+ OR c.category_name_tm ILIKE '%' || $2 || '%'
+ OR c.category_name_ru ILIKE '%' || $2 || '%'
+ OR c.category_name_en ILIKE '%' || $2 || '%'
+ORDER BY p.status DESC,p.updated_at DESC
+LIMIT $3 OFFSET ($4 - 1) * $3;`;
+
+export const getSubCategoryCon=`SELECT s.id FROM sub_category s WHERE s.category_id=$1;`;
+
+export const getCategoryFilter=`SELECT s.* FROM sub_category s WHERE s.status!=0 ORDER BY s.updated_at;`;
+export const getRegionFilter=`SELECT d.* FROM district d ORDER BY id DESC;`;
+
+export const bringToFront = `UPDATE product SET updated_at=now() WHERE id=$1 RETURNING *`;
+
+export const updateUser = `UPDATE mobile_users
+	SET fullname=$1, address=$2, region_id=$3, email=$4, gender=$5, updated_at=now()
+	WHERE id = $6 RETURNING *;`;
+	
+export const updateUserImage = `UPDATE mobile_users
+	SET profile_image=$1
+	WHERE id = $2 RETURNING *;`;

@@ -1,23 +1,45 @@
 import express from 'express';
 import { socket_io } from '../../../index.mjs';
 import { addUserQuery, updateUserToken } from '../../../modules/constant/admin_query.mjs';
-import { addFavorite, checkExistUser, checkFavorite, checkVerification, checkVerification2, deleteFavorite, getFavorite, getUserById, getUserByPhoneNumber, insertPhoneVerification } from '../../../modules/constant/user_queries.mjs';
+import { updateUser,updateUserImage,addFavorite, checkExistUser, checkFavorite, checkVerification, checkVerification2, deleteFavorite, getFavorite, getUserById, getUserByPhoneNumber, getUserProducts, insertPhoneVerification } from '../../../modules/constant/user_queries.mjs';
 import { db } from '../../../modules/database/connection.mjs';
 import { defaultMessage, message, successfullyDeleted } from '../../../modules/message.mjs';
 import { badRequest, errorResponse, response } from '../../../modules/response.mjs';
 import jwt from 'jsonwebtoken';
 import { secret_key } from '../../../modules/constant.mjs';
 import { verifyUserToken } from '../../../modules/auth/token.mjs';
+import multer from 'multer';
+import fs from 'fs';
 
+const folder = 'public/uploads/user';
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, folder)
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        cb(null, file.fieldname + '-' + uniqueSuffix + ".png")
+    }
+})
+
+const upload = multer({ storage: storage });
 const router = express.Router();
+
+const checkFolder = (req, res, next) => {
+    if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder, { recursive: true });
+    }
+    next();
+}
+
 function startsWith(str, word) {
     return str.lastIndexOf(word, 0) === 0;
 }
 router.post('/phone-verification', (req, res) => {
 
     if (typeof req.body === 'undefined' || req.body == null
-        || typeof req.body.phoneNumber === 'undefined' || req.body.phoneNumber == null || req.body.phoneNumber == '' || !startsWith(req.body.phoneNumber, "+9936")) {
+        || typeof req.body.phoneNumber === 'undefined' || req.body.phoneNumber == null || req.body.phoneNumber == '' || !startsWith(req.body.phoneNumber, "+9936" || typeof req.body.type === 'undefined' || req.body.type==null)) {
         badRequest(req, res);
         return;
     }
@@ -29,6 +51,7 @@ router.post('/phone-verification', (req, res) => {
                 let en = `Your verification code sent to ${req.body.phoneNumber}`;
                 let seq = (Math.floor(Math.random() * 10000) + 10000).toString().substring(1);
                 let text = `Siziň Elishi tassyklaýjy kodyňyz: ${seq}`;
+                console.log(text);
                 let final = response(false, message(tm, ru, en), {
                     user: null,
                     exist: "not-exist"
@@ -38,11 +61,22 @@ router.post('/phone-verification', (req, res) => {
                         user: null,
                         exist: "exist"
                     });
-
-
                 }
 
-                db.query(insertPhoneVerification, [req.body.phoneNumber, seq])
+                // console.log(re.body.type+" / "+)
+                
+                if(final.body.exist=="not-exist" && req.body.type=="login"){
+                    tm = `${req.body.phoneNumber} telefon belgisine degişli ulanyjy hasaby tapylmady!`;
+                    ru = `Учетная запись пользователя ${req.body.phoneNumber} не найдена!`;
+                    en = `User account not found ${req.body.phoneNumber}!`;
+                    final = response(false, message(tm, ru, en), {
+                        user: null,
+                        exist: "not-exist"
+                    });
+                    res.json(final);
+                    res.end();
+                } else {
+                    db.query(insertPhoneVerification, [req.body.phoneNumber, seq])
                     .then(result_insert => {
                         if (result_insert.rows.length) {
                             const data = {
@@ -59,6 +93,7 @@ router.post('/phone-verification', (req, res) => {
                     .catch(err => {
                         badRequest(req, res);
                     })
+                }
             } else {
                 badRequest(req, res);
             }
@@ -207,7 +242,13 @@ router.get('/get-user-by-id',verifyUserToken,(req,res)=>{
         let userId=req.user.user.id;
         db.query(getUserById,[userId])
         .then(result=>{
-            res.json(response(false,defaultMessage,result.rows));
+            db.query(getUserProducts,[userId])
+            .then(result2=>{
+                res.json(response(false,defaultMessage,{user:result.rows,products:result2.rows}));
+            })
+            .catch(err=>{
+                badRequest(req, res);
+            })
         })
         .catch(err=>{
             badRequest(req, res);
@@ -283,7 +324,62 @@ router.get('/get-favorite',verifyUserToken,(req,res)=>{
     }
 });
 
+router.put('/update-profile-image',verifyUserToken,upload.single('image'),(req,res)=>{
+    let userId=-1;
+    if(typeof req.user === 'undefined' || req.user == null){
+        userId=-1;
+        badRequest(req,res);
+        return;
+    }
+    userId=req.user.user.id;
+    let profileImage="";
+    if (typeof req.file !== 'undefined') {
+        profileImage = req.file.destination + "/" + req.file.filename;
+    } else {
+        badRequest(req,res);
+        return;
+    }
 
+    if(typeof req.body.oldImage !== 'undefined' && req.body.oldImage!=null){
+        fs.unlink(req.body.oldImage, (err, data) => { })
+    }
+
+    db.query(updateUserImage,[profileImage,userId])
+    .then(result=>{
+        if(result.rows.length){
+            res.json(response(false,defaultMessage(),result.rows))
+        } else {
+            badRequest(req,res);
+        }
+    })
+    .catch(err=>{
+        badRequest(req,res);
+    })
+})
+
+router.put("/edit-profile",verifyUserToken,(req,res)=>{
+    let userId=-1;
+    if(typeof req.user === 'undefined' || req.user == null){
+        userId=-1;
+        badRequest(req,res);
+        return;
+    }
+    userId=req.user.user.id;
+
+    if(typeof req.body === 'undefined' || req.body==null || typeof req.body.fullname === 'undefined' ||  req.body.fullname==null){
+        badRequest(req,res);
+        return;
+    }
+
+    db.query(updateUser,[req.body.fullname,req.body.address,req.body.region,req.body.email,req.body.gender,userId])
+    .then(result=>{
+        
+    })
+    .catch(err=>{
+        badRequest(req,res);
+    })
+
+})
 
 
 

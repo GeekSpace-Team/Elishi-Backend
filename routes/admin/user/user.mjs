@@ -249,6 +249,8 @@ const updateUser = (req, res) => {
             status, id];
     }
 
+    console.log(region_id)
+
     db.query(query, values)
         .then(result => {
             if (typeof result !== 'undefined') {

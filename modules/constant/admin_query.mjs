@@ -47,7 +47,10 @@
 	SET product_name=$1, price=$2, status=$3, description=$4, sub_category_id=$5, user_id=$6, is_popular=$7, size=$8, phone_number=$9, updated_at=now(),cancel_reason=$11
 	WHERE id=$10 RETURNING *;`;
     export const update_product_query_user = `UPDATE product
-	SET product_name=$1, price=$2, description=$3, sub_category_id=$4, size=$5, phone_number=$6, updated_at=now()
+	SET product_name=$1, price=$2, description=$3, sub_category_id=$4, size=$5, updated_at=now()
+	WHERE id=$6 RETURNING *;`;
+    export const update_product_query_user_with_status = `UPDATE product
+	SET product_name=$1, price=$2, description=$3, sub_category_id=$4, size=$5,status=$6, updated_at=now()
 	WHERE id=$7 RETURNING *;`;
     export const changeUserProductStatuses = `UPDATE product SET status=$1,updated_at=now() WHERE user_id=$2 RETURNING *`;
     export const changeProductStatusById = `UPDATE product SET status=$1,cancel_reason=$2,updated_at=now() WHERE id=$3 RETURNING *`;
@@ -67,7 +70,7 @@
         fullname, address, phone_number, profile_image, user_type_id, region_id, email, notification_token, gender, status, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now(), now())  RETURNING *;`;
     
-    export const getUserQueryWithCondition = `SELECT m.*,t.user_type,t.product_limit,d.district_name_tm,d.region_id FROM mobile_users m
+    export const getUserQueryWithCondition = `SELECT m.*,t.user_type,t.product_limit,d.district_name_tm FROM mobile_users m
 	LEFT JOIN user_type t ON m.user_type_id = t.id
 	LEFT JOIN district d ON m.region_id = d.id
 	WHERE m.fullname ILIKE '%' || $1 || '%' 
@@ -86,7 +89,7 @@
     OR
     t.user_type ILIKE '%' || $1 || '%'
     ORDER BY updated_at DESC LIMIT $2 OFFSET ($3 - 1) * $2;`;
-    export const getUserQueryWithoutCondition = `SELECT m.*,t.user_type,t.product_limit,d.district_name_tm,d.region_id FROM mobile_users m
+    export const getUserQueryWithoutCondition = `SELECT m.*,t.user_type,t.product_limit,d.district_name_tm FROM mobile_users m
 	LEFT JOIN user_type t ON m.user_type_id = t.id
 	LEFT JOIN district d ON m.region_id = d.id
 	ORDER BY updated_at DESC LIMIT $1 OFFSET ($2 - 1) * $1;`;

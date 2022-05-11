@@ -1,4 +1,4 @@
-import { errorMessage, notAuthorized } from "./message.mjs"
+import { errorMessage, limitMessage, notAuthorized } from "./message.mjs"
 
 const response = (error,message,body) =>{
     return {
@@ -31,9 +31,15 @@ const unauthorized = (req, res) => {
     res.end();
 }
 
+const reachLimit = (req, res) => {
+    res.status(234).json(response(true, limitMessage(),null));
+    res.end();
+}
+
 
 export {response}
 export {errorResponse}
 export {badRequest}
 export {forbidden}
 export {unauthorized}
+export {reachLimit}

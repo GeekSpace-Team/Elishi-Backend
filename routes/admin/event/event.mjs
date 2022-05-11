@@ -32,11 +32,17 @@ const checkFolder = (req, res, next) => {
 
 router.post('/add-event', verifyToken, checkFolder, upload.single('file'), (req, res) => {
     const { titleTM, titleRU, titleEN, status, isMain,url,event_type,go_id } = req.body;
+    let go=0;
+    if(typeof go_id === 'undefined' || go_id ==null || go_id === '') {
+        go=0;
+    } else {
+        go=go_id;
+    }
     let image = '';
     if(typeof req.file !== 'undefined'){
         image = req.file.destination + "/" + req.file.filename;
     }
-    db.query(addEvent, [titleTM, titleRU, titleEN,image, url, isMain,status,event_type,go_id ])
+    db.query(addEvent, [titleTM, titleRU, titleEN,image, url, isMain,status,event_type,go ])
         .then(result => {
             if (result.rows.length) {
                 res.send(response(false, "success", result.rows));

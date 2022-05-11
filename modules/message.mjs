@@ -38,3 +38,11 @@ export const successfullyDeleted = () =>{
         en: "Successfully deleted!"
     }
 }
+
+export const limitMessage = () =>{
+    return {
+        tm: "Siziň önümleriňiziň sany doldy! Has köp haryt goşmak üçin +99362737222 telefon belgi bilen habarlaşyň",
+        ru: "Siziň önümleriňiziň sany doldy! Has köp haryt goşmak üçin +99362737222 telefon belgi bilen habarlaşyň",
+        en: "Siziň önümleriňiziň sany doldy! Has köp haryt goşmak üçin +99362737222 telefon belgi bilen habarlaşyň"
+    }
+}

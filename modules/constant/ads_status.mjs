@@ -1,0 +1,22 @@
+export const ads_status= [
+    {
+        value:1,
+        label:"home_large"
+    },
+    {
+        value:2,
+        label:"home_mini"
+    },
+    {
+        value:3,
+        label:"products"
+    },
+    {
+        value:4,
+        label:"product_large"
+    },
+    {
+        value:6,
+        label:"hidden"
+    }
+];

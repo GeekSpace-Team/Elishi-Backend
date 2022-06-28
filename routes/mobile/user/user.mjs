@@ -53,7 +53,7 @@ router.post('/phone-verification', (req, res) => {
                 let ru = `Код подтверждения отправлен на номер ${req.body.phoneNumber}`;
                 let en = `Your verification code sent to ${req.body.phoneNumber}`;
                 let seq = (Math.floor(Math.random() * 10000) + 10000).toString().substring(1);
-                let text = `Siziň Elishi tassyklaýjy kodyňyz: ${seq}`;
+                let text = `Elishi app code: ${seq}`;
                 let final = response(false, message(tm, ru, en), {
                     user: null,
                     exist: "not-exist"

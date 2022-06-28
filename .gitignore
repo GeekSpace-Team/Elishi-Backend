@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/modules/logger/logs.txt
 /.pnp
 .pnp.js
 

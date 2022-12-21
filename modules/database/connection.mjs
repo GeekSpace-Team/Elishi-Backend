@@ -1,4 +1,4 @@
-import PG from 'pg';
+import PG from "pg";
 
 const Pool = PG.Pool;
 
@@ -6,7 +6,7 @@ const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
     database: 'handicraft',
-    password: 'QwertyWeb123',
+    password: 'geO123!',
     port: '5432',
 });
 

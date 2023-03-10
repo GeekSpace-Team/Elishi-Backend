@@ -1,19 +1,19 @@
-import express from 'express';
-import rateLimit from 'express-rate-limit';
-import { db } from './modules/database/connection.mjs';
-import { badRequest, response } from './modules/response.mjs';
-import { router } from './routes/router.mjs';
-import { userRouter } from './routes/tempUser.mjs';
-import cors from 'cors';
-import fs from 'fs';
-import jwt from 'jsonwebtoken';
-import { secret_key } from "./modules/constant.mjs";
-import requestIp from 'request-ip';
+import cors from "cors";
+import express from "express";
+import fs from "fs";
+import ipfilter from "express-ipfilter";
+import jwt from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
+import requestIp from "request-ip";
 import { Server } from "socket.io";
-import ipfilter from 'express-ipfilter';
-import { blocked_ip } from './modules/blacklist/blacklist.mjs';
-import { addBlackList, getBlackList } from './modules/constant/admin_query.mjs';
-import { verifyToken } from './modules/auth/token.mjs';
+import { verifyToken } from "./modules/auth/token.mjs";
+import { blocked_ip } from "./modules/blacklist/blacklist.mjs";
+import { secret_key } from "./modules/constant.mjs";
+import { addBlackList, getBlackList } from "./modules/constant/admin_query.mjs";
+import { db } from "./modules/database/connection.mjs";
+import { badRequest, response } from "./modules/response.mjs";
+import { router } from "./routes/router.mjs";
+import { userRouter } from "./routes/tempUser.mjs";
 
 const app = express();
 const rateHandler = () => {
@@ -54,6 +54,7 @@ db.connect();
 app.use(ip_blocker(blocked_ip))
 app.use(cors())
 app.use('/public', express.static('public'))
+app.use('/.well-known', express.static('.well-known'))
 app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

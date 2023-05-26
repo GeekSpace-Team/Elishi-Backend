@@ -61,7 +61,7 @@ export const checkFavorite = `SELECT f.*,count(f.id) as fav_count FROM favorite 
 export const deleteFavorite = `DELETE FROM favorite f WHERE f.user_id=$1 AND f.product_id=$2`;
 export const getFavorite = `SELECT f.id AS fav_id,f.product_id,f.user_id,p.*,(SELECT array_to_json(array_agg(i.*)) FROM product_images i WHERE i.product_id=f.product_id) AS images
 FROM favorite f
-LEFT JOIN product p ON f.product_id=p.id
+RIGHT JOIN product p ON f.product_id=p.id
 WHERE f.user_id=$1 ORDER BY f.updated_at DESC LIMIT $2 OFFSET ($3 - 1) * $2;`;
 // Congratulations
 export const getCongratulations = `SELECT c.*,h.holiday_name_tm,h.holiday_name_ru,h.holiday_name_en

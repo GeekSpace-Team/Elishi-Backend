@@ -507,7 +507,7 @@ const addProductFunction = async (req, res) => {
     if(userInfo && userInfo.rows.length>0){
         let user = userInfo.rows[0];
         if(user.user_type==='master'){
-            status = 4;
+            status = 2;
         }
 
         if(user.user_type==='vip'){

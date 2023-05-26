@@ -1,16 +1,17 @@
-import express from 'express';
-import { verifyTokenWithNext, verifyUserToken } from '../../../modules/auth/token.mjs';
-import { bringToFront, getCategoryFilter, getRegionFilter, getCategory, getCongratulations, getCongratulationsWithCondition, getConstantByType, getHoliday, getHome, getLocations, getEventProducts, getProductById, getBanners, getMainCategory, getAds, vipUser, getEvents, getNewProducts, getTrendProducts, getCollections, getSimilarProducts, getProductsQuery, getSubCategoryCon, searchQuery, getUserById, insertPhoneVerification, getAdsProducts, getAdsSingleProduct, getProductUserId, getConstantById } from '../../../modules/constant/user_queries.mjs';
-import { db } from '../../../modules/database/connection.mjs';
-import { defaultMessage, message, errorMessage } from '../../../modules/message.mjs';
-import { badRequest, response, reachLimit } from '../../../modules/response.mjs';
-import format from 'pg-format';
-import multer from 'multer';
-import { deleteProductImages, addProduct, addProductImage, deleteFirstImages, deleteNotFirstImages, update_product_query_user, getOldImages, delete_product, update_product_query_user_with_status, deleteImageById } from '../../../modules/constant/admin_query.mjs';
-import fs from 'fs';
-import sharp from 'sharp';
-import { socket_io } from '../../../index.mjs';
-import CyrillicToTranslit from 'cyrillic-to-translit-js';
+import CyrillicToTranslit from "cyrillic-to-translit-js";
+import express from "express";
+import format from "pg-format";
+import fs from "fs";
+import multer from "multer";
+import sharp from "sharp";
+import { socket_io } from "../../../index.mjs";
+import { verifyTokenWithNext, verifyUserToken } from "../../../modules/auth/token.mjs";
+import { addProduct, addProductImage, deleteFirstImages, deleteImageById, deleteNotFirstImages, deleteProductImages, delete_product, getOldImages, update_product_query_user, update_product_query_user_with_status } from "../../../modules/constant/admin_query.mjs";
+import { productStatuses } from "../../../modules/constant/status.mjs";
+import { bringToFront, getAds, getAdsProducts, getAdsSingleProduct, getBanners, getCategory, getCategoryFilter, getCollections, getCongratulations, getCongratulationsWithCondition, getConstantById, getConstantByType, getEventProducts, getEvents, getHoliday, getHome, getLocations, getMainCategory, getNewProducts, getProductById, getProductUserId, getProductsQuery, getRegionFilter, getSimilarProducts, getSubCategoryCon, getTrendProducts, getUserById, insertPhoneVerification, searchQuery, vipUser } from "../../../modules/constant/user_queries.mjs";
+import { db } from "../../../modules/database/connection.mjs";
+import { defaultMessage, errorMessage, message } from "../../../modules/message.mjs";
+import { badRequest, reachLimit, response } from "../../../modules/response.mjs";
 
 const cyrillicToTranslit = new CyrillicToTranslit();
 
@@ -499,6 +500,21 @@ const addProductFunction = async (req, res) => {
     }
     userId = req.user.user.id;
 
+    let userInfo = await db.query(getUserById,[userId]);
+
+    let status = 0;
+
+    if(userInfo && userInfo.rows.length>0){
+        let user = userInfo.rows[0];
+        if(user.user_type==='master'){
+            status = 4;
+        }
+
+        if(user.user_type==='vip'){
+            status = 3;
+        }
+    }
+
     const { name, price, size, sub_category, phone_number, description } = req.body;
 
     if (typeof req.body.images === 'undefined' && req.body.images == null && req.body.images.length <= 0) {
@@ -506,7 +522,7 @@ const addProductFunction = async (req, res) => {
         return;
     }
     let images = req.body.images;
-    await db.query(addProduct, [name, price, 0, description, sub_category, userId, false, size, phone_number])
+    await db.query(addProduct, [name, price, status, description, sub_category, userId, false, size, phone_number])
         .then(result => {
             if (typeof result.rows !== 'undefined') {
                 if (result.rows.length) {

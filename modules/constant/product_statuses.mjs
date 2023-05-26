@@ -3,4 +3,5 @@ export const productStatuses = [
     { name: 'active', value : 1},
     { name: 'free', value : 2},
     { name: 'vip', value :3},
+    { name: 'master', value :4},
 ]

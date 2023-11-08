@@ -11,7 +11,7 @@ export const defaultProductImage = (product_id) => ({
 export function addDefaultImage(products) {
   try {
     return products.map((index, product) => {
-      console.log(product.images);
+      console.log(product.id);
       if (
         !product.images ||
         typeof product.images === "undefined" ||

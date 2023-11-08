@@ -11,19 +11,23 @@ export const defaultProductImage = (product_id) => ({
 export function addDefaultImage(products) {
   try {
     return products.map((product, index) => {
-      console.log(product.id);
-      if (
-        !product.images ||
-        typeof product.images === "undefined" ||
-        product.images == null ||
-        product.images.lenght <= 0
-      ) {
-        console.log("Worked");
-        product.images = [defaultProductImage(product.id)];
-      }
-      return product;
+      return addNoImage(product);
     });
   } catch (err) {
     return products;
   }
+}
+
+export function addNoImage(product) {
+  console.log(product.id);
+  if (
+    !product.images ||
+    typeof product.images === "undefined" ||
+    product.images == null ||
+    product.images.lenght <= 0
+  ) {
+    console.log("Worked");
+    product.images = [defaultProductImage(product.id)];
+  }
+  return product;
 }

@@ -65,7 +65,10 @@ import {
   reachLimit,
   response,
 } from "../../../modules/response.mjs";
-import { addDefaultImage } from "../../../modules/constant/defaults.mjs";
+import {
+  addDefaultImage,
+  addNoImage,
+} from "../../../modules/constant/defaults.mjs";
 
 const cyrillicToTranslit = new CyrillicToTranslit();
 
@@ -330,8 +333,8 @@ publicRouter.get(
           .then((result2) => {
             res.json(
               response(false, defaultMessage(), {
-                product: result.rows[0],
-                similar: result2.rows,
+                product: addNoImage(result.rows[0]),
+                similar: addDefaultImage(result2.rows),
                 ads: ads,
               })
             );
@@ -340,7 +343,7 @@ publicRouter.get(
           .catch((err) => {
             res.json(
               response(false, defaultMessage(), {
-                product: result.rows[0],
+                product: addNoImage(result.rows[0]),
                 similar: [],
                 ads: ads,
               })

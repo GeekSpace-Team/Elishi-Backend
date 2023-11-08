@@ -19,8 +19,12 @@ export function addDefaultImage(products) {
         product.images.lenght <= 0
       ) {
         console.log("Worked");
-        product.images = [defaultProductImage(product.id)];
+        product = {
+          ...product,
+          images: [defaultProductImage(product.id)],
+        };
       }
+      console.log("After" + product.images);
       return product;
     });
   } catch (err) {

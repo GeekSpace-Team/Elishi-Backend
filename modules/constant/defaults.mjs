@@ -11,11 +11,13 @@ export const defaultProductImage = (product_id) => ({
 export function addDefaultImage(products) {
   try {
     return products.map((index, product) => {
+      console.log(product.images);
       if (
         typeof product.images === "undefined" ||
         product.images == null ||
         product.images.lenght <= 0
       ) {
+        console.log("Worked");
         product.images = [defaultProductImage(product.id)];
       }
       return product;

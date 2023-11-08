@@ -13,6 +13,7 @@ export function addDefaultImage(products) {
     return products.map((index, product) => {
       console.log(product.images);
       if (
+        !product.images ||
         typeof product.images === "undefined" ||
         product.images == null ||
         product.images.lenght <= 0

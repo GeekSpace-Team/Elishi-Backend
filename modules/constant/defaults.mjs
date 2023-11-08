@@ -10,7 +10,7 @@ export const defaultProductImage = (product_id) => ({
 
 export function addDefaultImage(products) {
   try {
-    return products.map((index, product) => {
+    return products.map((product, index) => {
       console.log(product.id);
       if (
         !product.images ||
